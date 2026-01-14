@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义烟花惊喜 - 清晰像素猫版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        body {
+            background-color: #f0f8ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            overflow: hidden;
+            transition: all 0.8s ease-in-out;
+            position: relative;
+        }
+
+        body.hide-all > *:not(.firework-container):not(.dynamic-text) {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .input-container {
+            position: absolute;
+            top: 20px;
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .custom-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ff9a9e;
+            border-radius: 30px;
+            font-size: 16px;
+            color: #333;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .custom-input:focus {
+            border-color: #ff6b81;
+            box-shadow: 0 0 8px rgba(255, 107, 129, 0.3);
+        }
+
+        .confirm-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            background-color: #ff9a9e;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-btn:hover {
+            background-color: #ff6b81;
+            transform: translateY(-2px);
+        }
+
+        .center-firework {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 120px;
+            z-index: 5;
+            transition: all 0.8s ease-in-out;
+            opacity: 0;
+        }
+
+        .firework-body {
+            width: 100%;
+            height: 80%;
+            background: linear-gradient(#fff, #ffd700, #ff9a9e);
+            border-radius: 30px 30px 10px 10px;
+            position: relative;
+            bottom: 0;
+        }
+
+        .firework-fuse {
+            position: absolute;
+            top: 10px;
+            right: -10px;
+            width: 20px;
+            height: 10px;
+            background-color: #8b4513;
+            border-radius: 2px;
+            transform: rotate(30deg);
+        }
+
+        .hand-lighter-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateX(30px) translateY(10px);
+            z-index: 6;
+            opacity: 0;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .hand {
+            width: 40px;
+            height: 60px;
+            background-color: #f5cba7;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .safe-lighter {
+            width: 20px;
+            height: 40px;
+            background-color: #ff4500;
+            border-radius: 5px;
+            position: absolute;
+            top: 10px;
+            right: -15px;
+        }
+
+        .lighter-flame {
+            width: 15px;
+            height: 20px;
+            background: linear-gradient(#ffd700, #ff4500);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            top: -15px;
+            right: 5px;
+            opacity: 0;
+            animation: flameFlicker 0.3s infinite alternate;
+        }
+
+        @keyframes flameFlicker {
+            0% {
+                transform: scale(0.9);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .hand-lighter-container.active {
+            opacity: 1;
+        }
+
+        .hand-lighter-container.active .lighter-flame {
+            opacity: 1;
+        }
+
+        .btn-container {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 90%;
+            max-width: 600px;
+            z-index: 10;
+            transition: opacity 0.8s ease;
+        }
+
+        .action-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            background-color: #ff9a9e;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+        }
+
+        .action-btn:hover {
+            background-color: #ff6b81;
+            transform: translateY(-2px);
+        }
+
+        .action-btn:disabled {
+            background-color: #d3d3d3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .firework-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes fireworkRise {
+            0% {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                opacity: 1;
+            }
+            100% {
+                top: 40%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                opacity: 0;
+            }
+        }
+
+        /* 像素猫动画：更顺滑，轮廓更清晰 */
+        @keyframes bigPixelCat {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            30% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            70% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes textPop {
+            0% {
+                transform: translate(-50%, 20px) scale(0.8);
+                opacity: 0;
+            }
+            30% {
+                transform: translate(-50%, -10px) scale(1.2);
+                opacity: 1;
+            }
+            70% {
+                transform: translate(-50%, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, 0) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .dynamic-text {
+            position: fixed;
+            top: 70vh;
+            left: 50%;
+            transform: translate(-50%, 0);
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: bold;
+            color: #ff6b81;
+            opacity: 0;
+            z-index: 1000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+        }
+
+        .dynamic-text.active {
+            animation: textPop 4s ease-in-out forwards;
+        }
+
+        @media (max-width: 768px) {
+            .center-firework {
+                width: 40px;
+                height: 80px;
+            }
+
+            .hand-lighter-container {
+                transform: translate(-50%, -50%) translateX(20px) translateY(5px);
+            }
+
+            .hand {
+                width: 30px;
+                height: 45px;
+            }
+
+            .safe-lighter {
+                width: 15px;
+                height: 30px;
+            }
+
+            .btn-container {
+                bottom: 30px;
+                gap: 10px;
+            }
+
+            .action-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                min-width: 100px;
+            }
+
+            .dynamic-text {
+                top: 75vh;
+            }
+        }
+    </style>
+</head>
+<body id="mainBody">
+    <div class="input-container">
+        <input type="text" class="custom-input" id="blessingInput" placeholder="输入自定义祝福语（例如：天天开心哦～）" value="Happy Happy～">
+        <button class="confirm-btn" id="confirmBtn">确认祝福语</button>
+    </div>
+
+    <div class="center-firework" id="centerFirework">
+        <div class="firework-body">
+            <div class="firework-fuse"></div>
+        </div>
+    </div>
+
+    <div class="hand-lighter-container" id="handLighter">
+        <div class="hand"></div>
+        <div class="safe-lighter">
+            <div class="lighter-flame"></div>
+        </div>
+    </div>
+
+    <div class="btn-container" id="btnContainer">
+        <button class="action-btn" id="btnReady">放置烟花</button>
+        <button class="action-btn" id="btnFire" disabled>点火</button>
+        <button class="action-btn" id="btnLaunch" disabled>发射</button>
+    </div>
+
+    <div class="firework-container" id="fireworkContainer"></div>
+    <div class="dynamic-text" id="dynamicText"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const body = document.getElementById('mainBody');
+            const blessingInput = document.getElementById('blessingInput');
+            const confirmBtn = document.getElementById('confirmBtn');
+            const centerFirework = document.getElementById('centerFirework');
+            const handLighter = document.getElementById('handLighter');
+            const btnReady = document.getElementById('btnReady');
+            const btnFire = document.getElementById('btnFire');
+            const btnLaunch = document.getElementById('btnLaunch');
+            const fireworkContainer = document.getElementById('fireworkContainer');
+            const dynamicText = document.getElementById('dynamicText');
+
+            let currentBlessing = blessingInput.value;
+
+            confirmBtn.addEventListener('click', function() {
+                if (blessingInput.value.trim() !== '') {
+                    currentBlessing = blessingInput.value.trim();
+                    alert(`祝福语已更新为：${currentBlessing}`);
+                } else {
+                    alert('请输入有效的祝福语哦～');
+                }
+            });
+
+            btnReady.addEventListener('click', function() {
+                centerFirework.style.opacity = '1';
+                btnReady.disabled = true;
+                btnFire.disabled = false;
+            });
+
+            btnFire.addEventListener('click', function() {
+                handLighter.classList.add('active');
+                btnFire.disabled = true;
+                btnLaunch.disabled = false;
+            });
+
+            btnLaunch.addEventListener('click', function() {
+                body.classList.add('hide-all');
+                centerFirework.style.opacity = '0';
+                launchFirework();
+            });
+
+            function launchFirework() {
+                const rise = document.createElement('div');
+                rise.style.position = 'absolute';
+                rise.style.width = '20px';
+                rise.style.height = '40px';
+                rise.style.background = 'linear-gradient(#ffd700, #ff4500)';
+                rise.style.borderRadius = '50%';
+                rise.style.animation = 'fireworkRise 1.5s ease-in-out forwards';
+                fireworkContainer.appendChild(rise);
+
+                setTimeout(() => {
+                    rise.remove();
+                    createClearBigCutePixelCat();
+                    dynamicText.innerText = currentBlessing;
+                    dynamicText.classList.add('active');
+
+                    setTimeout(() => {
+                        resetPage();
+                    }, 4000);
+                }, 1500);
+            }
+
+            // 核心优化：清晰版超大像素猫（固定黑白分区+增大间距+优化轮廓）
+            function createClearBigCutePixelCat() {
+                // 分区定义：头部黑色轮廓+脸部白色填充+特征黑色（眼睛/鼻子/嘴巴）
+                // 格式 [x,y,color]：color=0 黑，color=1 白，color=2 浅灰（腮红）
+                const clearCuteCat = [
+                    // ===== 头部黑色轮廓（外层，间距拉大，不扎堆）=====
+                    [-70,-50,0],[-60,-60,0],[-50,-70,0],[-40,-75,0],[-30,-80,0],[-20,-80,0],
+                    [-10,-80,0],[0,-80,0],[10,-80,0],[20,-80,0],[30,-80,0],[40,-75,0],
+                    [50,-70,0],[60,-60,0],[70,-50,0],[80,-30,0],[80,-10,0],[80,10,0],
+                    [80,30,0],[70,50,0],[60,60,0],[50,70,0],[40,75,0],[30,80,0],[20,80,0],
+                    [10,80,0],[0,80,0],[-10,80,0],[-20,80,0],[-30,80,0],[-40,75,0],
+                    [-50,70,0],[-60,60,0],[-70,50,0],[-80,30,0],[-80,10,0],[-80,-10,0],[-80,-30,0],
+                    
+                    // ===== 脸部白色填充（内层，和轮廓拉开距离，不糊）=====
+                    [-50,-30,1],[-40,-40,1],[-30,-50,1],[-20,-55,1],[-10,-60,1],[0,-60,1],
+                    [10,-60,1],[20,-55,1],[30,-50,1],[40,-40,1],[50,-30,1],[60,-10,1],
+                    [60,10,1],[50,30,1],[40,40,1],[30,50,1],[20,55,1],[10,60,1],[0,60,1],
+                    [-10,60,1],[-20,55,1],[-30,50,1],[-40,40,1],[-50,30,1],[-60,10,1],[-60,-10,1],
+                    
+                    // ===== 特征元素（黑色，位置精准，不杂乱）=====
+                    // 耳朵
+                    [-40,-80,0],[-50,-90,0],[-30,-90,0],[30,-90,0],[40,-80,0],[50,-90,0],
+                    // 眼睛（白圈+黑眼珠）
+                    [-30,-30,1],[-25,-35,1],[-20,-30,1],[-35,-25,1],[-15,-25,1],[-25,-25,0],
+                    [15,-25,1],[35,-25,1],[20,-30,1],[25,-35,1],[30,-30,1],[25,-25,0],
+                    // 鼻子
+                    [0,-10,0],[-5,0,0],[5,0,0],
+                    // 嘴巴
+                    [0,0,0],[0,10,0],[-5,15,0],[5,15,0],
+                    // 胡须（短而少）
+                    [-40,0,0],[-50,5,0],[-60,10,0],[40,0,0],[50,5,0],[60,10,0],
+                    
+                    // ===== 腮红（浅灰，点缀可爱）=====
+                    [-60,0,2],[-65,10,2],[-60,20,2],[-55,10,2],[55,10,2],[60,0,2],[65,10,2],[60,20,2]
+                ];
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+
+                clearCuteCat.forEach(([dx, dy, color]) => {
+                    const pixel = document.createElement('div');
+                    pixel.style.position = 'absolute';
+                    pixel.style.width = '22px'; // 稍微增大像素块，更清晰
+                    pixel.style.height = '22px';
+                    pixel.style.margin = '2px'; // 增加间距，避免黑色扎堆
+                    // 固定颜色：0=黑 1=白 2=浅灰，拒绝随机！
+                    const colorMap = ['#000', '#fff', '#f0f0f0'];
+                    pixel.style.backgroundColor = colorMap[color];
+                    // 定位
+                    pixel.style.left = `${centerX + dx}px`;
+                    pixel.style.top = `${centerY + dy}px`;
+                    pixel.style.animation = 'bigPixelCat 4s ease-in-out forwards';
+                    fireworkContainer.appendChild(pixel);
+
+                    setTimeout(() => pixel.remove(), 4000);
+                });
+            }
+
+            function resetPage() {
+                body.classList.remove('hide-all');
+                handLighter.classList.remove('active');
+                dynamicText.classList.remove('active');
+
+                btnReady.disabled = false;
+                btnFire.disabled = true;
+                btnLaunch.disabled = true;
+
+                centerFirework.style.opacity = '0';
+                fireworkContainer.innerHTML = '';
+                dynamicText.innerText = '';
+            }
+        });
+    </script>
+</body>
+</html>
